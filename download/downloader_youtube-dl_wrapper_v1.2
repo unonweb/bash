@@ -1,0 +1,97 @@
+#! /bin/bash
+
+
+# VARIABLES
+
+b_="\e[1m"
+i_="\e[2m"
+u_="\e[4m"
+red_="\e[31m"
+green_="\e[32m"
+cyan_="\e[36m"
+violett_="\e[35m"
+_reset="\e[0m"
+
+audio_list="download_list_audio"
+video_list="download_list_video"
+
+echo ""
+
+# CHECK YOUTUBE-DL
+
+echo -e "Be aware that ${i_}youtube-dl${_reset} must be installed for this script to work."
+
+# CHECK AUDIO FILE
+
+if [[ -f ${audio_list} ]]; then
+    echo -e "File ${i_}${audio_list}${_reset} found."  
+else
+    echo -e "\n${b_}Error${_reset}: In order to download ${u_}audio${_reset} you need to create a file ${i_}${audio_list}${_reset} in the current folder with your download links inside."
+    echo ""
+    echo -e "\tCreate file ${i_}${audio_list}${_reset} in the current directory? (y|n)"
+    read -n 1 -p ">> " file
+    echo ""
+    if [[ $file == "y" ]]; then touch ${audio_list} && echo -e "\tFile created"; fi
+fi
+
+
+# CHECK VIDEO FILE
+
+if [[ -f download_list_video ]]; then
+    echo -e "File ${i_}${video_list}${_reset} found."
+else
+    echo -e "\n${b_}Error${_reset}: In order to download ${u_}video${_reset} you need to create a file ${i_}${video_list}${_reset} in the current folder with your download links inside."
+    echo ""
+    echo -e "\tCreate file ${i_}${video_list}${_reset} in the current directory? (y|n)"
+    read -n 1 -p ">> " file
+    echo ""
+    if [[ $file == "y" ]]; then touch ${video_list} && echo -e "\tFile created"; fi
+fi
+
+
+# CHOOSE OPTIONS
+
+while [[ true ]]; do
+    
+        
+    echo -e "\n\t1) Download audio?\n\t2) Download video?"
+    echo -e "\n\t3) Don't download playlists\n\t4) Yes, download playlists"
+    echo -e "\n\t5) Verbose output (for debubbing)\n\t6) No, stay quiet please."
+    echo -e "\n\t7) Ready!"
+
+    read -n 1 -p ">> " choice
+    
+    case "$choice" in
+    
+        1) type="--extract-audio --batch-file ${audio_list} --audio-format mp3 --audio-quality 0"; input=$audio_list;;
+        2) type=""; input=$video_list;;
+        3) playlist="--no-playlist";;
+        4) playlist="";;
+        5) verbose="--verbose";;
+        6) verbose="--verbose";;
+        7) break;;
+        *) echo -e "\n${b_}Error${_reset}: Bad input.\nOnly numbers are allowed";;
+    
+    esac
+done    
+
+# BUILT COMMAND
+
+mapfile content_input_list <${input}
+echo -e "\tNumber of Links found: $(( ${#content_input_list[@]} -1 ))"
+
+echo -e "\tStarting download...\n"
+
+cmd="youtube-dl $type $playlist $verbose --batch-file ${input} --output '%(title)s.%(ext)s' && echo "" > $input"
+echo "Command: $cmd"
+eval "$cmd"
+
+
+# ABORT WHEN DONE
+
+input=
+    while [[ $input != "q" ]]; do
+	    echo -e "\n\tHit ${b_}q${_reset} to quit"
+        echo -e "\ty no manes pendejo" 
+	    read -n 1 -p ">> " input
+    done

@@ -1,0 +1,144 @@
+#! /bin/bash
+
+
+# VARIABLES
+
+b_="\e[1m"
+i_="\e[2m"
+u_="\e[4m"
+red_="\e[31m"
+green_="\e[32m"
+cyan_="\e[36m"
+violett_="\e[35m"
+_reset="\e[0m"
+
+audio_list="download_list_audio"
+video_list="download_list_video"
+
+echo ""
+
+# CHECK YOUTUBE-DL
+
+echo -e "Be aware that ${i_}youtube-dl${_reset} must be installed for this script to work."
+
+# CHECK AUDIO FILE
+
+if [[ -f ${audio_list} ]]; then
+    echo -e "File ${i_}${audio_list}${_reset} found."  
+else
+    echo -e "\n${b_}Error${_reset}: In order to download ${u_}audio${_reset} you need to create a file ${i_}${audio_list}${_reset} in the current folder with your download links inside."
+    echo ""
+    echo -e "\tCreate file ${i_}${audio_list}${_reset} in the current directory? (y|n)"
+    read -n 1 -p ">> " file
+    echo ""
+    if [[ $file == "y" ]]; then touch ${audio_list} && echo -e "\tFile created"; fi
+fi
+
+
+# CHECK VIDEO FILE
+
+if [[ -f download_list_video ]]; then
+    echo -e "File ${i_}${video_list}${_reset} found."
+else
+    echo -e "\n${b_}Error${_reset}: In order to download ${u_}video${_reset} you need to create a file ${i_}${video_list}${_reset} in the current folder with your download links inside."
+    echo ""
+    echo -e "\tCreate file ${i_}${video_list}${_reset} in the current directory? (y|n)"
+    read -n 1 -p ">> " file
+    echo ""
+    if [[ $file == "y" ]]; then touch ${video_list} && echo -e "\tFile created"; fi
+fi
+
+
+# OPTIONS
+
+echo -e "\n\t1) Download audio?\n\t2) Download video?"
+read -n 1 -p ">> " choice
+echo -e "\n\t1) Don't download playlists\n\t2) Yes, download playlists"
+read -n 1 -p ">> " playlist
+echo ""
+
+
+# AUDIO + NO PLAYLIST
+
+if [[ $choice == "1" && $playlist == "1" ]]; then
+
+    mapfile content_audio_list <${audio_list}
+    echo -e "\tNumber of Links found: $(( ${#content_audio_list[@]} -1 ))"
+    
+    echo -e "\tStarting download...\n"
+
+    youtube-dl \
+    --no-playlist \
+    --extract-audio \
+    --batch-file ${audio_list} \
+    --audio-format mp3 \
+    --audio-quality 0 \
+    --output '%(title)s.%(ext)s' \
+    && echo "" > ${audio_list}
+
+
+# AUDIO + YES PLAYLIST
+
+elif [[ $choice == "1" && $playlist == "2" ]]; then
+
+    mapfile content_audio_list <${audio_list}
+    echo -e "\tNumber of Links found: $(( ${#content_audio_list[@]} -1 ))"
+    
+    echo -e "\tStarting download...\n"
+
+    youtube-dl \
+    --yes-playlist \
+    --extract-audio \
+    --batch-file ${audio_list} \
+    --audio-format mp3 \
+    --audio-quality 0 \
+    --output '%(title)s.%(ext)s' \
+    && echo "" > ${audio_list}
+
+
+# VIDEO + NO PLAYLIST
+
+elif [[ $choice == "2" && $playlist == "1" ]]; then
+
+    mapfile content_video_list <${video_list}
+    echo -e "\tNumber of Links found: $(( ${#content_video_list[@]} -1 ))"
+    
+    echo -e "\tStarting download...\n"
+
+    youtube-dl \
+    --no-playlist \
+    --batch-file ${video_list} \
+    --output '%(title)s.%(ext)s' \
+    && echo "" > ${video_list}
+
+
+# VIDEO + YES PLAYLIST
+
+elif [[ $choice == "2" && $playlist == "2" ]]; then
+
+    mapfile content_video_list <${video_list}
+    echo -e "\tNumber of Links found: $(( ${#content_video_list[@]} -1 ))"
+    
+    echo -e "\tStarting download...\n"
+
+    youtube-dl \
+    --yes-playlist \
+    --batch-file ${video_list} \
+    --output '%(title)s.%(ext)s' \
+    && echo "" > ${video_list}
+
+else
+
+    echo -e "\n${b_}Error${_reset}: Bad input.\nOnly numbers are allowed"
+
+fi
+
+
+# ABORT
+
+input=
+    while [[ $input != "q" ]]; do
+	    echo -e "\n\tHit ${b_}q${_reset} to quit"
+        echo -e "\ty no manes pendejo" 
+	    read -n 1 -p ">> " input
+    done
