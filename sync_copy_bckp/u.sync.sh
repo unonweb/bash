@@ -146,11 +146,24 @@ eval "$cmd"
 
 if [[ $? != 0 ]]; then
 	echo -e "\nsomething went wrong..."
-	echo -e "Maybe create remote path? (y|n)"
+	echo -e "\nMaybe create remote path? (1)"
+	echo -e "Try again with sudo? (2)"
+	echo -e "Quit? (3)\n"
 	read -n 1 -p ">> " input
-	if [[ $input == "y" ]]; then
-		ssh ${userHost} mkdir -p ${remotePath}	
-	fi
+	echo ""
+	case $input in
+		"1")
+			ssh ${userHost} mkdir -p ${remotePath} && echo "${remotePath} created"
+			;;
+		"2")
+			eval "sudo $cmd"
+			;;
+		"3")
+			exit
+			;;
+	esac
+		
+
 fi
 
 closing
