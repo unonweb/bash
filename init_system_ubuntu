@@ -1,5 +1,0 @@
-sudo rm /etc/apt/preferences.d/nosnap.pref
-apt update
-sudo apt remove celluloid
-rm -rf /home/frida/.config/celluloid
-sudo apt install ssh vim keepassxc thunderbird git
