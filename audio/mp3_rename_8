@@ -1,0 +1,376 @@
+#! /bin/bash
+
+# Description: Tool to rename .mp3 files in a given folder
+# To do:
+
+#   - test guess_album_year_file if no album_year in folder
+#   - test guess_song_number if digit is part of song_title
+#   - using tab completion distorts funcions
+#   - function: offer dialog in the end to remove pattern from filenames
+
+# Version: 8
+
+### FOLDERMODE FUNCTIONS ###
+
+folder_mode_1 () {
+### Description: works on a folder that contains song files all belonging to one album
+### Input:
+### Output:
+
+    set_artist_name
+    guess_album_year_folder
+    set_album_title
+    create_song_file_array_old
+    list_song_files_old
+    # set variables and create song_file_array_new:
+    for song_file_old in "${song_file_array_old[@]}"; do
+      set_song_file_rest
+      guess_album_year_file
+      guess_song_number
+      guess_song_title
+      create_song_file_array_new "$artist_name" "$album_year" "$album_title" "$song_number" "$song_title"
+      unset helper_array
+      unset song_file_rest artist_name album_title album_year song_number song_title
+    done
+    list_song_files_new
+    # unset song_file_array_old song_file_array_new
+    # echo -e "\n\n\e[4mDo you agree to rename? (y|n)\e[0m:"
+    # read -en 1 -p ">> " answer_rename
+    #case $answer_rename in
+    #  yes|y )
+    #    for song_file in "${folder_location}"/*.mp3; do
+    #      create_filename_final "$artist_name" "$album_year" "$album_title" "$song_number" "$song_title"
+    #      mv "$song_file" "$folder_location/${filename_final[*]}"
+    #    done
+    #    echo "\nDone."
+    #    ;;
+    #  no|n )
+    #    echo -e "\nAbort."
+    #    ;;
+    #esac
+}
+
+### GUESSING FUNCTIONS ###
+
+set_artist_name () {
+### Tasks:
+###   1) guess artist_name by folder_location
+###   2) prompt to confirm or correct
+###   3) create array with elements fo artist_name
+### Input: folder_location
+### Output: artist_name
+
+  # 1) guess artist_name by folder_location and set it as default:
+    # remove everything from folder_location until last "/" (starting @ beginning)
+    artist_name=${folder_location##*/}
+    # remove everything from folder_location until last "-" (starting @ end)
+    artist_name=${artist_name%%-*}
+    # remove trailing whitespaces
+    artist_name=${artist_name%"${artist_name##*[![:space:]]}"}
+
+  # 2) prompt to confirm or correct:
+    echo -e "\e[1mEnter the artist name or leave blank if the default value (\e[36m$artist_name\e[0m) \e[1mfits\e[0m:"
+    read -ep ">> " answer_artist_name
+    if [[ $answer_artist_name ]]; then
+      artist_name="$answer_artist_name"
+    fi
+
+  # 3) create an array for variations
+    # create an array to split artist_name in words:
+    artist_array=($artist_name)
+    # create another array for variations and
+    # add lowercase variation:
+    artist_array_var[0]="${artist_array[@],,}"
+    # add uppercase variation:
+    artist_array_var[1]="${artist_array[@]^}"
+    # add lowercase variation with _seperation:
+    artist_array_var[2]="${artist_array_var[0]// /_}"
+    # add uppercase variation with _seperation:
+    artist_array_var[3]="${artist_array_var[1]// /_}"
+
+}
+
+guess_album_year_folder () {
+### Description: guess by name of folder
+### Input: folder_location
+### Output: album_year
+
+    if [[ ${folder_location##*/} = *[12][0-9][0-9][0-9]* ]]; then
+      album_year=${folder_location##*/}
+      # remove all letters and signs:
+      album_year=${album_year//[[:alpha:][:punct:]]}
+      # remove the first two numbers with a space to their left:
+      # album_year=${album_year%% [0-9][0-9]}
+      # remove trailing whitespaces:
+      album_year=${album_year%"${album_year##*[![:space:]]}"}
+      # remove leading whitespaces:
+      album_year=${album_year#"${album_year%%[![:space:]]*}"}
+    fi
+}
+
+guess_album_year_file () {
+### Description: guess by name of file
+### Input: song_file_rest
+### Output: album_year
+
+    if [[ -z $album_year ]]; then
+      if [[ "$song_file_rest" = *[12][09][0-9][0-9]* ]]; then
+        album_year="$song_file_rest"
+        album_year=${album_year##[12][09][0-9][0-9]}
+        album_year=${album_year%%[12][09][0-9][0-9]}
+      fi
+    fi
+}
+
+set_album_title () {
+### Description:
+##    1) guess album_title by folder_location substracting band_name
+###   2) prompt to confirm or correct
+### Input: folder_location, artist_name, album_year
+### Output: album_title
+
+  # 1) guess album_title by folder_location and set it as default:
+    # remove everything from folder_location until last "/" (starting @ beginning)
+    album_title=${folder_location##*/}
+    # remove artist_name:
+    album_title=${album_title#"$artist_name"}
+    # remove album_year:
+    album_title=${album_title/"$album_year"}
+    # remove all dashes:
+    album_title=${album_title//-/}
+    # remove trailing whitespaces
+    album_title=${album_title%"${album_title##*[![:space:]]}"}
+    # remove leading whitespaces:
+    album_title=${album_title#"${album_title%%[![:space:]]*}"}
+
+  # 2) prompt to confirm or correct:
+    echo -e "\e[1mEnter the album title or leave blank if the default value (\e[36m$album_title\e[0m) \e[1mfits\e[0m:"
+    read -ep ">> " answer_album_title
+    if [[ $answer_album_title ]]; then
+      album_title="$answer_album_title"
+    fi
+
+  # 3) eventually correct album_year if album_title contains numbers:
+    if [[ "$album_title" = *[[:digit:]]* ]]; then
+      echo "warning: album_year contains album_title"
+
+      # remove all non digit characters from album_title and remove the result from album_year:
+      album_year=${album_year/${album_title//[![:digit:]]/}}
+      # remove trailing whitespaces
+      album_year=${album_year%"${album_year##*[![:space:]]}"}
+      # remove leading whitespaces:
+      album_year=${album_year#"${album_year%%[![:space:]]*}"}
+
+    fi
+
+}
+
+set_song_file_rest () {
+
+### Description: remove what's save to remove
+### Input: song_file, filename_extension, artist_name, album_title
+### Output: song_file_rest
+
+      # remove everything from song_file (path) until last "/"
+      song_file_rest=${song_file##*/}
+      # remove filename_extension:
+      song_file_rest=${song_file_rest/"$filename_extension"}
+      # remove the artist_name or its variations:
+      for element in ${artist_array_var[@]}; do
+        if [[ "$song_file" = *$element* ]]; then
+           song_file_rest=${song_file_rest/"$element"/}
+        fi
+      done
+      # song_file_rest=${song_file_rest/${artist_array_var[@]}/}
+      # remove album_title if set:
+      if [[ $album_title ]]; then
+        song_file_rest=${song_file_rest/"$album_title"/}
+      fi
+
+}
+
+guess_song_number () {
+### Description: recognize a song_number in a filename and distinguish it from an album_title
+### Input: folder_location, artist_name, album_title
+### Output: song_number
+
+    song_number="$song_file_rest"
+    # remove album_year
+    song_number=${song_number/"$album_year"/}
+    # check for leftover numbers
+    if [[ "$song_number" = *[[:digit:]]* ]]; then
+        song_number=${song_number//[![:digit:]]}
+        echo -e "\n"
+    fi
+
+    # remove possible numbers that are part of the song_title:
+    # song_number=${song_number//[[:digit:]]}
+}
+
+guess_song_title () {
+### Description: function to recognize a song_title in a filename
+### Input: song_file, folder_location, artist_name, album_title
+### Output: song_title
+
+    # remove artist_name and album_title (if set)
+    song_title="$song_file_rest"
+    # remove album_year
+    song_title=${song_title/"$album_year"}
+    # remove song_number
+    song_title=${song_title/"$song_number"}
+    # if no album_title is set; try to guess one (seperated by -):
+    if [[ -z $album_title ]]; then
+      if [[ "$song_title" = *[-]* ]]; then
+        echo -e "Does this song title: \e[46m"$song_title"\e[0m include any album title? (yes/no)"
+        read answer_album_title
+        echo -e ""
+        case $answer_album_title in
+          yes|y)
+            echo -e "Please choose which is the album titel:"
+            echo -e "1) ${song_title##*[-]}"
+            echo -e "2) ${song_title%[-]*}"
+            read answer_album_title
+            echo -e ""
+            case $answer_album_title in
+              1)
+                album_title=${song_title##*[-]}
+                # remove dashes
+                album_title=${album_title//-/}
+                # remove leading whitespaces:
+                album_title=${album_title#"${album_title%%[![:space:]]*}"}
+                ;;
+              2)
+                album_title=${song_title%[-]*}
+                # remove dashes
+                album_title=${album_title//[-_.]/}
+                # remove leading whitespaces:
+                album_title=${album_title#"${album_title%%[![:space:]]*}"}
+                ;;
+            esac
+            ;;
+          no|n)
+            ;;
+          *)
+            echo -e "illegal answer"
+            ;;
+        esac
+      fi
+    fi
+    # remove album_title:
+    song_title=${song_title/"$album_title"}
+    # replace all punctation characters with space:
+    song_title=${song_title//[_-.]/ }
+    # remove leading whitespaces:
+    # song_title=${song_title##[a-z][A-Z]};
+    song_title=${song_title#"${song_title%%[![:space:]]*}"}
+    # remove double whitespaces:
+    song_title=${song_title//  / }
+    # reinsert album_title if song_title is empty:
+    if [[ -z $song_title ]]; then
+      song_title=$album_title
+    fi
+    # convert to uppercase:
+    song_title="${song_title^}"
+    #song_title_array=$song_title
+    #song_title="${song_title_array[@]^}"
+}
+
+### HELPER FUNCTIONS ###
+
+list_song_files_old () {
+### Description: print the list of song files found in song_file_array_old
+### Input: song_file_array_old, filename_extension
+
+    echo -e "\n\e[4mThe following song files have been found\e[0m:\n"
+    for song_file_old in "${song_file_array_old[@]}"; do
+      [[ -n $song_file_old ]] && echo -e "${song_file_old##*/}"
+      # /*"$filename_extension"
+    done
+}
+
+list_song_files_new () {
+### Description: print the list of song files found in song_file_array_old
+### Input: song_file_array_old, filename_extension
+
+    echo -e "\n\e[4mThe song files could be renamed like this\e[0m:\n"
+    for song_file_new in "${song_file_array_new[@]}"; do
+      [[ -n $song_file_new ]] && echo -e "${song_file_new}"
+    done
+}
+
+create_song_file_array_old () {
+
+    for song_file in "${folder_location}"/*.mp3; do
+      song_file_array_old+=("$song_file")
+    done
+}
+
+create_song_file_array_new () {
+
+    # just a helper_array with each passed argument (like artist_name)
+    # assigned into an own index;
+    # the idea is to test the arguments first before adding them
+    for argument in "$@"; do
+      if [[ -n "$argument" ]] && [[ "$argument" != "$song_title" ]]; then
+        helper_array+=("$argument" - )
+      elif [[ -n "$argument" ]] && [[ "$argument" = "$song_title" ]]; then
+        helper_array+=("$argument")
+      fi
+      shift
+    done
+    # now all elements of the helper_array are assigned to one index together:
+    song_file_array_new+=("${helper_array[*]}")
+}
+
+
+### START ###
+
+echo -e ""
+filename_extension=.mp3
+
+### INITIALIZATION ###
+
+    echo -e "This is the \e[1mSongFilesRenameTool\e[0m V5.
+    \n\e[1m5\e[0m elements are recognized to form a complete song filename: \e[1;36martist name\e[0m - \e[1;36malbum year\e[0m - \e[1;36malbum title\e[0m - \e[1;36msong number\e[0m - \e[1;36msong title\e[0m\nThis is the proposed order. In a future version the ordern may be customized\n"
+    echo -e "\e[1mEnter the location of the folder with the song files you want to rename:\e[0m "
+    read -ep ">> " folder_location
+    echo -e "\nNow there're different ways to deal with the folder depending on whether...
+    1)... it contains song files all belonging to one album
+    2)... it contains song files belonging to the same artist but to different albums
+    3)... it contains a complete mess of different artists\n"
+    echo -e "   \e[1mChoose (1|2|3):\e[0m"
+    read -en 1 -p $'    >> ' answer_folder_mode
+    echo -e ""
+    case $answer_folder_mode in
+      1 )
+      folder_mode_1
+        ;;
+      2 ) echo "not yet implemented"
+        ;;
+      3 )
+        ;;
+      * ) echo "illegal answer"
+        ;;
+    esac
+
+### check section ###
+
+#    echo -e "\n\e[4mCheck and correct\e[0m:\n"
+#    for song_file in "${folder_location}"/*.mp3; do
+#      # remove what's safe to remove:
+#      set_song_file_rest
+#      # set album_year:
+#      guess_album_year
+#      # set song_number:
+#      guess_song_number
+#      # set song_title:
+#      guess_song_title
+
+#      ### results section ###
+#      echo -e "\n\e[4mResults\e[0m:\n"
+#      echo -e "band name:\t $artist_name\nalbum titel:\t $album_title\nalbum year:\t $album_year\nsong title:\t $song_title\nsong number:\t $song_number\n"
+#      unset album_year
+#      unset song_number
+#      unset song_title
+#    done
+#    unset esc_song_number

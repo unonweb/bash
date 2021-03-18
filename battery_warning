@@ -1,0 +1,21 @@
+#! /bin/bash
+while [ "$1" != "stop" ]; do
+battery_percentage=$(upower -i /org/freedesktop/UPower/devices/battery_BAT0 \
+| grep 'percentage' \
+| grep -o -E '[1-9][1-9]')
+case $battery_percentage in
+  2[0-9]) message="battery < 30"
+  ;;
+  1[0-9]) message="battery < 20"
+  ;;
+  [5-9]) message="battery < 10"
+  ;;
+  [0-4]) message="battery < 5"
+  ;;
+esac
+notify-send "$message"
+sleep 30
+done
+if [ $1 = stop ]; then
+  exit;
+fi

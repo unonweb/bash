@@ -1,0 +1,6 @@
+#! bin/bash
+
+read -ep "Enter glob pattern:" glob_pattern
+read -ep "Enter string to match:" string_match
+
+echo "$string_match" | grep -F "$glob_pattern" -

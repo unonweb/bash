@@ -1,0 +1,80 @@
+#! /bin/bash
+
+### Version_3: using external commands:
+
+## SOURCING
+
+. /home/frida/.bash_variables
+. /home/frida/code/bash/bash_functions.sh
+
+## VARIABLES
+
+musicDir=/home/frida/audio/musik
+
+checkDir $musicDir
+if [[ $? != 0 ]]; then closing; fi
+
+
+## STEP 1: (re)create array of genreDirs
+
+genreDirs=()
+
+for item in $(find $musicDir -name "#*"); do
+	[[ -d $item ]] && genreDirs+=("$item")
+done
+
+# list genreDirs:
+echo -e "\n${b_}The following genreDirs have been found:${_reset}\n"
+for element in "${genreDirs[@]}"; do
+	echo $element
+done
+
+echo ""
+
+
+## STEP 2: search genreDirs for links (create folder_array_old):
+
+i=0
+regex=Link
+folder_array_old=()
+
+while [[ $i -le ${#genreDirs[@]} ]]; do
+	for element in ${genreDirs[$i]}/*; do
+		if [[ -d $element ]] && [[ $element =~ $regex ]]; then
+			folder_array_old+=("$element")
+		#else 
+			# show every single file tested:
+			# echo -e "${b_}$element${_reset} is no link"
+		fi
+	done
+	((i++))
+done
+
+## STEP 3: rename operation:
+
+if [[ -n ${folder_array_old[1]} ]]; then
+
+	echo -e "${b_}The following rename operations are proposed:${_reset}\n"
+
+	for element in "${folder_array_old[@]}"; do
+			folder_name=${element##*/} # cut everything until last /
+			echo -e "${cyan_}$folder_name${_reset} ${b_}-->${_reset} ${cyan_}${folder_name/"Link to "/}${_reset}"
+	done
+
+	echo -e "\nIs this alright? (y|n)"
+	read -e -n 1 -p ">> " answer
+
+	case $answer in
+		yes|y ) 
+			for element in "${folder_array_old[@]}"; do
+				mv "$element" "${element/"Link to "/}"
+			done
+			;;
+		no|n ) 
+			continue
+			;;
+	esac
+
+else
+	echo -e "${b_}No rename operations are proposed.${_reset}\n"
+fi

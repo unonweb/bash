@@ -1,0 +1,46 @@
+#! /bin/bash
+
+## VARIABLES
+
+. /home/frida/.bash_variables
+audio_tools_folder="/home/frida/IT+ET/BASH/bash_scripts/audio"
+mp3_rename_versions=()
+remove_link_versions=()
+
+## STEP 1: check for tools and their versions:
+
+if [[ -d $audio_tools_folder ]]; then # check if directory still exists
+	
+	for element in "$audio_tools_folder"/*; do
+		filename=${element##*/}
+		[[ -f $filename && $filename = mp3_rename* ]] && mp3_rename_versions+=("$filename")
+		[[ -f $filename && $filename = remove_link* ]] && remove_link_versions+=("$filename")
+	done
+
+else
+	echo -e "Error: ${cyan_}$audio_tools_folder${_reset} not found."
+fi
+
+## STEP 2: show tools for selection:
+
+all_audio_tools=("${mp3_rename_versions[@]}" "${remove_link_versions[@]}")
+
+if [[ $all_audio_tools ]]; then
+	echo -e "${b_}The following tools are available:${_reset}"
+	echo -e "
+	1) ${cyan_}${mp3_rename_versions[-1]}${_reset}
+	2) ${cyan_}${remove_link_versions[-1]}${_reset}\n"
+else
+	echo "Sorry, no audio tools found."
+fi
+
+## STEP 3: tool selection:
+
+echo -e "${b_}Which one would you like to select?:${_reset}(number)"
+read -n 1 -p ">> "
+case selection in
+	1 )
+	;;
+	2 )
+	;;
+esac

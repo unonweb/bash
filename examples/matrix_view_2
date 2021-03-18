@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+OIFS=$IFS # store the original field separator
+. /home/frida/.bash_variables
+
+### PARSE ARGUMENTS ###
+
+if [ -z "$1" ]; then
+  echo "No argument supplied"
+  exit 1
+fi
+
+while [[ $# > 0 ]]; do
+  case $1 in
+    -f|--file )
+      file="$2"
+      echo -e "The file to be viewed is: ${b_}${2}${_reset}"
+      shift
+      ;;
+    -d|--delimiter )
+      delimiter=$2
+      echo -e "The delimiter chosen is: ${b_}${2}${_reset}"
+      shift
+      ;;
+    --help|* )
+      echo -e "program:\n\t${b_}${0}${_reset}."
+      echo -e "options:\n\t-f|--file ${i_}file${_reset}\n\t-d|--delimiter ${i_}delimiter${_reset}"
+      exit 0
+      ;;
+  esac
+  shift
+done
+
+if [[ -z $delimiter ]]; then
+  echo "What's the delimiter?"
+  read -ep ">> " delimiter
+fi
+
+if [[ -z $file ]]; then
+  echo "Which file is to be viewd?"
+  read -ep ">> " file
+fi
+
+### LINE ARRAY ###
+
+# filter out comments:
+while read -r line; do
+  [[ ! $line =~ ^#.* ]] && line_array+=("$line")
+done < $file
+
+# set number of lines as value for rows:
+rows=${#line_array[@]}
+
+# figure out number of fields on one line and set it as value for columns:
+number_fields=0
+IFS="$delimiter"
+for field in ${line_array[1]}; do # DO NOT QUOTE!
+    ((number_fields++))
+done
+columns=${number_fields:=3}
+echo -e "number of fields detected: ${b_}$number_fields${_reset}"
+echo -e "... and set as value for columns: ${b_}$columns${_reset}"
+
+### FIELD ARRAY ###
+
+for field in ${line_array[@]}; do # DO NOT QUOTE!
+    field_array+=("$field")
+done
+
+### PREFIXES ###
+
+# check for known files:
+case $file in
+  /etc/passwd ) prefix_array=( user password UID GID info home shell )
+  echo -e "... file found in databank"
+    ;;
+  /etc/fstab ) prefix_array=( filesystem mountpoint type options dump pass )
+esac
+
+# if no match - ask user for prefixes:
+IFS=$OIFS
+if [[ -z $prefix_array ]]; then
+  echo -e "This is a sample line of the given file: ${cyan_}${line_array[1]}${_reset}"
+  echo "Please give the prefix for the individual fields (separated by whitespaces):"
+  read -ep ">> "-a prefix_array
+fi
+
+### SET WIDTH FOR EVERY COLUMN ###
+
+# initialize an array filled with "1" according to the number of columns:
+for (( i = 0; i < $columns; i++ )); do
+  longest_string[$i]=1
+done
+
+column_count=0
+
+for field in ${field_array[@]}; do
+  if [[ ${#field} -gt ${longest_string[$column_count]} ]]; then
+    longest_string[$column_count]=${#field}
+  fi
+  ((column_count++))
+  if [[ $column_count -eq 7 ]]; then
+    column_count=0
+  fi
+done
+
+echo -e "longest string: ${b_}${longest_string[@]}${_reset}" && exit
+column_count=0
+
+### PRINT RESULTS ###
+
+# print headline:
+printf "%b" "${u_}\n"
+printf "%-${width}s" "${prefix_array[@]}"; printf "%b" "\n\n"
+printf "%b" "${_reset}"
+
+# print body:
+for ((r=0; r<rows; r++)); do
+    IFS="$delimiter"
+    printf "%b" "${cyan_}" # print the whole body cyan until reset
+    for field in ${line_array[$r]}; do # dealing with every field of every line
+      printf "%-${longest_string[$column_count]}s" "${field}"
+      ((column_count++))
+      if [[ $column_count = $columns ]]; then
+        column_count=0
+      fi
+    done
+  printf "\n"
+  printf "%b" "${_reset}"
+done
+
+### RESTORE DEFAULT ###
+
+IFS=$OIFS
+unset prefix_array line_array field_array delimiter longest_string
+
+### BACKUP ###
+# for ((i=0; i<rows; i++)); do
+#    for ((j=0; j<columns; j++)); do
+#      printf "%-20s" ${field_array[0]}
+#      printf "%-20s" ${field_array[1]}
+#    done
+#  printf "NEWLINE\n"
+#done
+#
+#
+#
+#
+#

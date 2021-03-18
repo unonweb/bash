@@ -1,0 +1,53 @@
+#! /bin/bash
+
+### Version_3: using external commands:
+
+## VARIABLES
+
+default_music_folder=/home/frida/Audio/Musik
+. /home/frida/.bash_variables
+
+## STEP 1: (re)create array of genre_folders
+
+genre_folders=()
+
+for item in $(find $default_music_folder -name "#*"); do
+	[[ -d $item ]] && genre_folders+=("$item")
+done
+
+# list genre_folders:
+echo -e "\n${b_}The following genre_folders have been found:${_reset}\n"
+for element in "${genre_folders[@]}"; do
+	echo $element
+done
+
+echo ""
+
+## STEP 2/3: search genre_folders for links and rename them
+
+i=0
+regex=Link
+
+while [[ $i -le ${#genre_folders[@]} ]]; do
+
+	for element in ${genre_folders[$i]}/*; do
+		if [[ -d $element ]] && [[ $element =~ $regex ]]; then
+			folder_name=${element##*/}
+			echo -e "rename ${cyan_} $folder_name${_reset} to ${cyan_}${folder_name/"Link to "/}${_reset} (y|n)"
+			read -e -n 1 -p ">> " answer
+			case $answer in
+				yes|y ) mv "$element" "${element/"Link to "/}"
+					;;
+				no|n ) continue
+			esac
+			# mv "$element" "${element/"Link to "/}"
+			# echo -e "\n ${cyan_}$element${_reset} renamed to ${cyan_}${element/"Link to "/}${_reset}"
+		#else 
+			# show every single file tested:
+			# echo -e "${b_}$element${_reset} is no link"
+		fi
+		
+	done
+	((i++))
+
+done

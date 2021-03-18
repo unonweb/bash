@@ -1,0 +1,69 @@
+#! bin/bash
+. /home/frida/.bash_variables
+
+OIFS=$IFS # store the original field separator
+prefix_array=(user: password: UID: GID: info: home: shell:)
+
+# read file line by line and store every line into an array:
+while read line; do
+  line_array+=("$line")
+done < /etc/passwd
+
+# split elements of every line at every ":"
+IFS=":"
+for element in ${line_array[@]}; do # DO NOT QUOTE!
+    element_array+=("$element")
+done
+
+# print elements:
+IFS=$OIFS
+[[ -z $COLUMNS ]] && echo '$COLUMNS not exported!'
+
+width=$((COLUMNS/2))
+i=0 # limit while loop by nr. of array elements
+k=
+l=
+p=0 # prefix
+rows=${#line_array[@]}
+columns=5
+
+printf "%-20b" user password UID GID info home shell
+printf "\n"
+for ((i=0;i<$rows;i++)); do
+    for ((j=0;j<$columns;j++)); do
+      printf "%-20b" "column: $j"
+    done
+  printf "row: ${i}\n"
+done
+
+
+while [[ $i -lt ${#element_array[@]} ]]; do
+
+  printf "%-${width:40}b" "${b_}${prefix_array[$p]}${_reset}${cyan_}${element_array[$k]}${_reset}\c"
+  printf "%-${width:40}b" "${b_}${prefix_array[$p]}${_reset}${cyan_}${element_array[$l]}${_reset}\c"
+	i=$((i+1))
+  p=$((p+1))
+  if [[ $p = 7 ]]; then # reset prefix every 6 fields
+    p=0
+    printf "%-${width:40}b" "\n----------------------------\c"
+  fi
+  echo -e ""
+done
+
+# for element in "${element_array[@]}"; do
+
+#    printf "%-40b" "${b_}${prefix_array[$i]}${_reset}${cyan_}${element_array[$k]}${_reset}\c"
+#    ((i++)); ((j++)); ((k++))
+#    if [[ $i = 7 ]]; then
+#    i=0
+#    ((j+7)); ((k+7))
+
+#  fi
+
+#      i=0
+#    fi
+#
+#done
+
+unset i k
+IFS=$OIFS

@@ -1,0 +1,46 @@
+#! /bin/bash
+
+#
+## Version_2: finding all #genre_folders (starting with #)
+
+# 1. check genre_folder_file
+# 2. check for #genre_folders in default music dir
+# 3. check for #genre_folders in every sub level directory
+
+## FUNCTIONS 
+
+add_to_genre_folders() {
+
+	if [[ -d $item ]] && [[ "$item" = "#"* ]]; then
+		genre_folders+=("$item")
+	fi
+}
+
+add_to_sub_folders() {
+
+	if [[ -d $item ]]; then
+		sub_folders+=("$item")
+	fi	
+}
+
+## VARIABLES
+
+default_music_folder=/home/frida/Audio/Musik
+genre_folders=()
+sub_folders=()
+
+## STEP 1: check default_music_folder and initialize an array of sub_folders:
+
+for item in "$default_music_folder"/*; do
+	add_to_genre_folders
+	add_to_sub_folders
+done
+
+## STEP 2: check sub folders
+
+for item in "${sub_folders[@]}"/*; do
+	add_to_genre_folders	
+	add_to_sub_folders
+done
+
+
