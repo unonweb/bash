@@ -1,0 +1,11 @@
+date=$(date +%F)
+echo "starting backup"
+
+# wordpress backup
+
+if [[ $USER == "root" ]]; then
+	mysqldump -u wp-admin -p wordpress > /root/backup/wordpress/${date}_wordpress_db && echo "backup done" 
+else
+	echo "must be root to execute"
+fi
+

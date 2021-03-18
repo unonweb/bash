@@ -1,0 +1,5 @@
+date=$(date +%F)
+
+# wordpress backup
+
+        mysqldump -u wp-admin -p"*8Crb)-jZJ_-(;S>~.k" wordpress > /backup/wordpress/wp_db_${date}

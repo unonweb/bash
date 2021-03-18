@@ -1,0 +1,41 @@
+#! /bin/bash
+
+# This script compares a given value $1 to an array of values that is initially read from a file.
+# I use it to compare an IP which is passed over by fail2ban to a whitelist of IPs.
+
+# This script is called by /etc/fail2ban/jail.local
+
+## TO DO:
+    # add the possibility to reload the files so they're read again into the array
+    # maybe that script has to be turned into a service
+
+current_ip=$1
+path_whitelist="/home/zipol/whitelist"
+
+if [[ -z ${whitelist} ]]; then
+    
+    mapfile whitelist <$path_whitelist
+
+fi
+
+for item in ${whitelist[@]}; do
+# if there's a match with any of the IPs exit successfully
+
+    if [[ $item = "$current_ip" ]]; then
+        exit 0
+    fi
+
+done
+
+# if you haven't exit until here, there was no match - so exit unsuccessfully
+exit 1
+
+
+
+
+
+
+
+
+
+
