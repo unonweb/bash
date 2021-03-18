@@ -1,4 +1,0 @@
-#! /bin/bash
-rm -rfv /home/frida/.local/share/Trash/files/*
-rm -rfv /home/frida/.local/share/Trash/info/*
-
