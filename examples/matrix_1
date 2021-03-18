@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+echo -e "Enter number of rows:"
+read -ep ">> " rows
+echo -e "Enter number of columns:"
+read -ep ">> " columns
+# default values:
+rows=${rows:=3}
+columns=${columns:=3}
+#print:
+printf "%-20b" user password UID GID info home shell
+printf "\n"
+for ((i=0;i<$rows;i++)); do
+    for ((j=0;j<$columns;j++)); do
+      printf "%-20b" "column: $j"
+    done
+  printf "row: ${i}\n"
+done

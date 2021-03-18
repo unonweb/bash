@@ -1,0 +1,12 @@
+#! /bin/bash
+# don't rename fridas_ip as this filename is expected on the other side
+
+fridas_ip=$(curl ifconfig.co)
+
+# check if the obtained value really is an ip address
+if [[ $fridas_ip =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+	echo $fridas_ip > "/home/frida/it/dev/bash/scripts/fridas_ip"
+fi
+
+scp -i "/home/frida/.ssh/id_rsa" -P 444 "/home/frida/it/dev/bash/scripts/fridas_ip" "zipol@82.165.122.48:/home/zipol/"
+ssh -p 444 zipol@82.165.122.48

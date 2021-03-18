@@ -1,0 +1,88 @@
+create_file_array () {
+
+    for file in /var/www/audio_web/htdocs/*; do
+       file_array+=("$file")
+    done
+}
+
+list_files_folders () {
+    
+    i=0    
+    echo -e "\n\e[4mWhich file(s) do you want to copy to the great Zipol?\e[0m:\n"
+    for file in "${file_array[@]}"; do
+        if [[ -d $file ]]; then
+            echo -e "\t\e[36m$i)\e[0m \e[4m${file##*/}\e[0m"
+        else
+            echo -e "\t\e[36m$i)\e[0m ${file##*/}"
+        fi
+        ((i++))
+    done
+
+    echo -e ""
+}
+
+get_answer () {
+    
+    read -p "Number(s) separated by space: " -a selection
+}
+
+copy_files () {
+
+    for number in ${selection[@]}; do
+        # folder:
+        if [[ -d ${file_array[$number]} ]]; then
+            scp -i /home/frida/.ssh/id_rsa -P 444 -r ${file_array[$number]} "zipol@82.165.122.48:/var/www/audio_web/htdocs/"        
+        # file:
+        else
+            scp -i /home/frida/.ssh/id_rsa -P 444 ${file_array[$number]} "zipol@82.165.122.48:/var/www/audio_web/htdocs/"
+        fi
+    done
+}
+
+process_answer () {
+
+    for number in ${selection[@]}; do
+        # if folder:
+        if [[ -d ${file_array[$number]} ]]; then
+            echo -e "You've selected a folder!"
+            echo -e "\e[36mo\e[0m) open folder (not implemented yet)"
+            echo -e "\e[36mc\e[0m) copy folder"
+            read -p ">> " answer_folder
+            # open folder:
+            if [[ $answer_folder = "o" ]]; then
+                open_subfolder
+            # copy folder:            
+            else
+                echo -e "Copy folder: \e[36m${file_array[$number]}\e[0m ?"            
+            fi
+        # if file:        
+        else            
+            echo -e "Copy: \e[36m${file_array[$number]}\e[0m ?"        
+        fi      
+    done
+
+    # check if correct:
+    read -n 1 -p "Is this correct? (y|n) " correct
+    
+    if [[ $correct = "y" ]]; then
+        copy_files
+    else
+        echo -e "\nabort"
+    fi
+}
+
+main () {
+    
+    create_file_array
+    create_folder_array
+    list_files_folders
+    get_answer
+    process_answer
+   
+}
+
+main
+
+#ls -1 /var/www/audio_web/htdocs/
+#read -e -p "Which file(s) do you want to copy to Zipol?" -a files
+#echo "You've selected ${files[@]}"

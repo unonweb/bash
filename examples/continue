@@ -1,0 +1,14 @@
+#! bin/bash
+
+N=10
+while [[ $N -gt 0 ]]; do # counts down from 10 to 0
+	((N --))
+	echo "N is now $N"
+	M=0 # M is reset to 0
+	while [[ $M -lt 10 ]]; do # M counts up from 0 to 10 for every N
+		((M ++))
+    # when N=5 and M=5 the continuation of the current M-loop is skipped
+    [[ $M -eq 5 && $N -eq 5 ]] && continue
+    echo -e "${_cyan}M is now $M ${_reset}"
+  done
+done
